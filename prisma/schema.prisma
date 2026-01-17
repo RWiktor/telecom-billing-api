@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum InvoiceStatus {
+  UNPAID
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model User {
+  id             Int            @id @default(autoincrement())
+  name           String
+  email          String         @unique
+  password       String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  subscriptions  Subscription[]
+}
+
+model Plan {
+  id                   Int            @id @default(autoincrement())
+  name                 String         @unique
+  monthlyFee           Decimal        @db.Decimal(10, 2)
+  minutesLimit         Int?
+  dataMBLimit          Int?
+  smsLimit             Int?
+  overageMinutePrice   Decimal?       @db.Decimal(10, 2)
+  overageDataPrice     Decimal?       @db.Decimal(10, 2)
+  overageSmsPrice      Decimal?       @db.Decimal(10, 2)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  subscriptions        Subscription[]
+}
+
+model Subscription {
+  id            Int           @id @default(autoincrement())
+  userId        Int
+  planId        Int
+  phoneNumber   String        @unique
+  startDate     DateTime
+  endDate       DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan          Plan          @relation(fields: [planId], references: [id], onDelete: Restrict)
+  usageRecords  UsageRecord[]
+  invoices      Invoice[]
+  
+  @@index([userId])
+  @@index([planId])
+}
+
+model UsageRecord {
+  id             Int          @id @default(autoincrement())
+  subscriptionId Int
+  timestamp      DateTime
+  minutes        Int          @default(0)
+  dataMB         Int          @default(0)
+  smsCount       Int          @default(0)
+  createdAt      DateTime     @default(now())
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  
+  @@index([subscriptionId, timestamp])
+}
+
+model Invoice {
+  id             Int            @id @default(autoincrement())
+  subscriptionId Int
+  year           Int
+  month          Int
+  baseFee        Decimal        @db.Decimal(10, 2)
+  overageFee     Decimal        @db.Decimal(10, 2)
+  totalAmount    Decimal        @db.Decimal(10, 2)
+  status         InvoiceStatus  @default(UNPAID)
+  paidAt         DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  subscription   Subscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  
+  @@unique([subscriptionId, year, month])
+}

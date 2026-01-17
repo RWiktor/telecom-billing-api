@@ -3,7 +3,7 @@ import type { Express } from 'express'
 import type { Request, Response } from 'express'
 import cors from 'cors'
 
-const PORT = 8000
+const PORT = process.env.PORT || 8000
 const app: Express = express()
 
 app.use(cors())
