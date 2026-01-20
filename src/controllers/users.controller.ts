@@ -15,10 +15,10 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
   res.json(users)
 }
 
-export const getUserById = async (req: Request, res: Response): Promise<void> => {
-  const {id} = req.params
+export const getUserById = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+  const { id } = req.params
 
-  if (isNaN(Number(id))) {
+  if (isNaN(Number(id)) || Number(id) <= 0) {
     throw badRequest('Invalid user ID')
   }
 
