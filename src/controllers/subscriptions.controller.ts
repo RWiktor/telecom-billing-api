@@ -1,8 +1,14 @@
 import type { Request, Response } from 'express'
 import { prisma } from '../db'
 import { notFound, badRequest } from '../utils/errors'
+import { validate } from '../utils/validation'
+import {
+  idParamSchema,
+  usageQuerySchema,
+  createSubscriptionSchema,
+} from '../schemas/subscriptions.schema'
 
-export const getSubscriptions = async (req: Request, res: Response): Promise<void> => {
+export const getSubscriptions = async (req: Request, res: Response) => {
   const subscriptions = await prisma.subscription.findMany({
     include: {
       user: {
@@ -18,18 +24,11 @@ export const getSubscriptions = async (req: Request, res: Response): Promise<voi
   res.json(subscriptions)
 }
 
-export const getSubscriptionById = async (
-  req: Request<{ id: string }>,
-  res: Response,
-): Promise<void> => {
-  const { id } = req.params
-
-  if (isNaN(Number(id)) || Number(id) <= 0) {
-    throw badRequest('Invalid subscription ID')
-  }
+export const getSubscriptionById = async (req: Request, res: Response) => {
+  const { id } = validate(idParamSchema, req.params)
 
   const subscription = await prisma.subscription.findUnique({
-    where: { id: Number(id) },
+    where: { id },
     include: {
       user: {
         select: {
@@ -49,45 +48,27 @@ export const getSubscriptionById = async (
   res.json(subscription)
 }
 
-export const getSubscriptionUsage = async (
-  req: Request<{ id: string }>,
-  res: Response,
-): Promise<void> => {
-  const { id } = req.params
-  const { year, month } = req.query
-
-  if (isNaN(Number(id)) || Number(id) <= 0) {
-    throw badRequest('Invalid subscription ID')
-  }
+export const getSubscriptionUsage = async (req: Request, res: Response) => {
+  const { id } = validate(idParamSchema, req.params)
+  const query = validate(usageQuerySchema, req.query)
 
   const subscription = await prisma.subscription.findUnique({
-    where: { id: Number(id) },
+    where: { id },
   })
 
   if (!subscription) {
     throw notFound('Subscription not found')
   }
 
-  const where: any = { subscriptionId: Number(id) }
+  const where: { subscriptionId: number; timestamp?: { gte: Date; lt: Date } } = {
+    subscriptionId: id,
+  }
 
-  if (year && month) {
-    const yearNum = Number(year)
-    const monthNum = Number(month)
-
-    if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
-      throw badRequest('Invalid year. Must be between 2000 and 2100')
-    }
-
-    if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
-      throw badRequest('Invalid month. Must be between 1 and 12')
-    }
-
+  if (query.year && query.month) {
     where.timestamp = {
-      gte: new Date(yearNum, monthNum - 1, 1),
-      lt: new Date(yearNum, monthNum, 1),
+      gte: new Date(query.year, query.month - 1, 1),
+      lt: new Date(query.year, query.month, 1),
     }
-  } else if (year || month) {
-    throw badRequest('Both year and month are required when filtering by date')
   }
 
   const usage = await prisma.usageRecord.findMany({
@@ -108,4 +89,53 @@ export const getSubscriptionUsage = async (
     records: usage,
     summary,
   })
+}
+
+export const createSubscription = async (req: Request, res: Response) => {
+  const data = validate(createSubscriptionSchema, req.body)
+
+  const user = await prisma.user.findUnique({
+    where: { id: data.userId },
+  })
+
+  if (!user) {
+    throw notFound('User not found')
+  }
+
+  const plan = await prisma.plan.findUnique({
+    where: { id: data.planId },
+  })
+
+  if (!plan) {
+    throw notFound('Plan not found')
+  }
+
+  const existingPhone = await prisma.subscription.findUnique({
+    where: { phoneNumber: data.phoneNumber },
+  })
+
+  if (existingPhone) {
+    throw badRequest('Phone number already in use')
+  }
+
+  const subscription = await prisma.subscription.create({
+    data: {
+      userId: data.userId,
+      planId: data.planId,
+      phoneNumber: data.phoneNumber,
+      startDate: new Date(),
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      plan: true,
+    },
+  })
+
+  res.status(201).json(subscription)
 }
