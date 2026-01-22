@@ -7,19 +7,24 @@ import {
   usageQuerySchema,
   createSubscriptionSchema,
 } from '../schemas/subscriptions.schema'
+import { Prisma } from '../../prisma/generated/client'
+
+const userSelect: Prisma.UserSelect = {
+  id: true,
+  name: true,
+  email: true,
+}
+
+const subscriptionInclude: Prisma.SubscriptionInclude = {
+  user: {
+    select: userSelect,
+  },
+  plan: true,
+}
 
 export const getSubscriptions = async (req: Request, res: Response) => {
   const subscriptions = await prisma.subscription.findMany({
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-      plan: true,
-    },
+    include: subscriptionInclude,
   })
   res.json(subscriptions)
 }
@@ -29,16 +34,7 @@ export const getSubscriptionById = async (req: Request, res: Response) => {
 
   const subscription = await prisma.subscription.findUnique({
     where: { id },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-      plan: true,
-    },
+    include: subscriptionInclude,
   })
 
   if (!subscription) {
@@ -125,16 +121,7 @@ export const createSubscription = async (req: Request, res: Response) => {
       phoneNumber: data.phoneNumber,
       startDate: new Date(),
     },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-      plan: true,
-    },
+    include: subscriptionInclude,
   })
 
   res.status(201).json(subscription)

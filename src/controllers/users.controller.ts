@@ -3,16 +3,19 @@ import { prisma } from '../db'
 import { notFound } from '../utils/errors'
 import { validate } from '../utils/validation'
 import { idParamSchema } from '../schemas/users.schema'
+import { Prisma } from '../../prisma/generated/client'
+
+const userSelect: Prisma.UserSelect = {
+  id: true,
+  email: true,
+  name: true,
+  createdAt: true,
+  updatedAt: true,
+}
 
 export const getUsers = async (req: Request, res: Response) => {
   const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      createdAt: true,
-      updatedAt: true,
-    },
+    select: userSelect,
   })
   res.json(users)
 }
@@ -22,13 +25,7 @@ export const getUserById = async (req: Request, res: Response) => {
 
   const user = await prisma.user.findUnique({
     where: { id },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      createdAt: true,
-      updatedAt: true,
-    },
+    select: userSelect,
   })
 
   if (!user) {
