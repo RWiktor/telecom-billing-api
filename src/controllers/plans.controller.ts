@@ -1,22 +1,21 @@
 import type { Request, Response } from 'express'
 import { prisma } from '../db'
-import { notFound, badRequest } from '../utils/errors'
+import { notFound } from '../utils/errors'
+import { validate } from '../utils/validation'
+import { idParamSchema } from '../schemas/plans.schema'
 
-export const getPlans = async (req: Request, res: Response): Promise<void> => {
+export const getPlans = async (req: Request, res: Response) => {
   const plans = await prisma.plan.findMany({
     orderBy: { monthlyFee: 'asc' },
   })
   res.json(plans)
 }
 
-export const getPlanById = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
-  const { id } = req.params
+export const getPlanById = async (req: Request, res: Response) => {
+  const { id } = validate(idParamSchema, req.params)
 
-  if (isNaN(Number(id)) || Number(id) <= 0) {
-    throw badRequest('Invalid plan ID')
-  }
   const plan = await prisma.plan.findUnique({
-    where: { id: Number(id) },
+    where: { id },
   })
   if (!plan) {
     throw notFound('Plan not found')

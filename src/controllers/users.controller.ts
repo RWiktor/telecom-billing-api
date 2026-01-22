@@ -1,8 +1,10 @@
 import type { Request, Response } from 'express'
 import { prisma } from '../db'
-import { notFound, badRequest } from '../utils/errors'
+import { notFound } from '../utils/errors'
+import { validate } from '../utils/validation'
+import { idParamSchema } from '../schemas/users.schema'
 
-export const getUsers = async (req: Request, res: Response): Promise<void> => {
+export const getUsers = async (req: Request, res: Response) => {
   const users = await prisma.user.findMany({
     select: {
       id: true,
@@ -15,15 +17,11 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
   res.json(users)
 }
 
-export const getUserById = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
-  const { id } = req.params
-
-  if (isNaN(Number(id)) || Number(id) <= 0) {
-    throw badRequest('Invalid user ID')
-  }
+export const getUserById = async (req: Request, res: Response) => {
+  const { id } = validate(idParamSchema, req.params)
 
   const user = await prisma.user.findUnique({
-    where: { id: Number(id) },
+    where: { id },
     select: {
       id: true,
       email: true,
