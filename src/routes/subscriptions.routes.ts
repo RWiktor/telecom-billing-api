@@ -10,6 +10,6 @@ import {
 export const subscriptionsRouter: Router = express.Router()
 
 subscriptionsRouter.get('/', getSubscriptions)
+subscriptionsRouter.post('/', createSubscription)
 subscriptionsRouter.get('/:id/usage', getSubscriptionUsage)
 subscriptionsRouter.get('/:id', getSubscriptionById)
-subscriptionsRouter.post('/', createSubscription)
