@@ -4,6 +4,7 @@ import { usersRouter } from './users.routes'
 import { plansRouter } from './plans.routes'
 import { usageRouter } from './usage.routes'
 import { subscriptionsRouter } from './subscriptions.routes'
+import { invoicesRouter } from './invoices.routes'
 
 export const indexRouter: Router = express.Router()
 
@@ -11,3 +12,4 @@ indexRouter.use('/users', usersRouter)
 indexRouter.use('/plans', plansRouter)
 indexRouter.use('/subscriptions', subscriptionsRouter)
 indexRouter.use('/usage', usageRouter)
+indexRouter.use('/invoices', invoicesRouter)
