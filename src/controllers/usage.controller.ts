@@ -17,7 +17,10 @@ export const getUsageById = async (req: Request, res: Response) => {
 }
 
 export const createUsage = async (req: Request, res: Response) => {
-  const { subscriptionId, timestamp, minutes, dataMB, smsCount } = validate(createUsageSchema, req.body)
+  const { subscriptionId, timestamp, minutes, dataMB, smsCount } = validate(
+    createUsageSchema,
+    req.body,
+  )
 
   const subscription = await prisma.subscription.findUnique({
     where: { id: subscriptionId },
