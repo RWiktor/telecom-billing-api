@@ -2,7 +2,7 @@ import type { Request, Response } from 'express'
 import { prisma } from '../db'
 import { notFound } from '../utils/errors'
 import { validate } from '../utils/validation'
-import { idParamSchema } from '../schemas/users.schema'
+import { emailParamSchema, idParamSchema } from '../schemas/users.schema'
 import { Prisma } from '../../prisma/generated/client'
 
 const userSelect: Prisma.UserSelect = {
@@ -25,6 +25,21 @@ export const getUserById = async (req: Request, res: Response) => {
 
   const user = await prisma.user.findUnique({
     where: { id },
+    select: userSelect,
+  })
+
+  if (!user) {
+    throw notFound('User not found')
+  }
+
+  res.json(user)
+}
+
+export const getUserByEmail = async (req: Request, res: Response) => {
+  const { email } = validate(emailParamSchema, req.params)
+
+  const user = await prisma.user.findUnique({
+    where: { email },
     select: userSelect,
   })
 
