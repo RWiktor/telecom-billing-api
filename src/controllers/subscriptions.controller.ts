@@ -87,6 +87,20 @@ export const getSubscriptionUsage = async (req: Request, res: Response) => {
   })
 }
 
+export const getSubscriptionInvoices = async (req: Request, res: Response) => {
+  const { id } = validate(idParamSchema, req.params)
+
+  const invoices = await prisma.invoice.findMany({
+    where: { subscriptionId: id },
+  })
+
+  if (!invoices) {
+    throw notFound('No invoices found')
+  }
+
+  res.json(invoices)
+}
+
 export const createSubscription = async (req: Request, res: Response) => {
   const data = validate(createSubscriptionSchema, req.body)
 
@@ -125,4 +139,17 @@ export const createSubscription = async (req: Request, res: Response) => {
   })
 
   res.status(201).json(subscription)
+}
+
+export const deleteSubscription = async (req: Request, res: Response) => {
+  const { id } = validate(idParamSchema, req.params)
+
+  try {
+    await prisma.subscription.delete({
+      where: { id },
+    })
+    res.status(204).send()
+  } catch (error) {
+    throw notFound('Subscription not found')
+  }
 }
