@@ -145,11 +145,14 @@ export const deleteSubscription = async (req: Request, res: Response) => {
   const { id } = validate(idParamSchema, req.params)
 
   try {
-    await prisma.subscription.delete({
+    const deletedSubscription = await prisma.subscription.delete({
       where: { id },
     })
-    res.status(204).send()
-  } catch (error) {
-    throw notFound('Subscription not found')
+    res.status(204).json(deletedSubscription)
+  } catch (error: any) {
+    if (error.code === 'P2025') {
+      throw notFound('Subscription not found')
+    }
+    throw error
   }
 }
