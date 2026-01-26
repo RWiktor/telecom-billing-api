@@ -56,9 +56,7 @@ export const getSubscriptionUsage = async (req: Request, res: Response) => {
     throw notFound('Subscription not found')
   }
 
-  const where: { subscriptionId: number; timestamp?: { gte: Date; lt: Date } } = {
-    subscriptionId: id,
-  }
+  const where: any = { subscriptionId: id }
 
   if (query.year && query.month) {
     where.timestamp = {
@@ -67,23 +65,28 @@ export const getSubscriptionUsage = async (req: Request, res: Response) => {
     }
   }
 
-  const usage = await prisma.usageRecord.findMany({
-    where,
-    orderBy: { timestamp: 'desc' },
-  })
-
-  const summary = usage.reduce(
-    (acc, curr) => ({
-      totalMinutes: acc.totalMinutes + curr.minutes,
-      totalDataMB: acc.totalDataMB + curr.dataMB,
-      totalSms: acc.totalSms + curr.smsCount,
+  const [usage, aggregation] = await Promise.all([
+    prisma.usageRecord.findMany({
+      where,
+      orderBy: { timestamp: 'desc' },
     }),
-    { totalMinutes: 0, totalDataMB: 0, totalSms: 0 },
-  )
+    prisma.usageRecord.aggregate({
+      where,
+      _sum: {
+        minutes: true,
+        dataMB: true,
+        smsCount: true,
+      },
+    }),
+  ])
 
   res.json({
     records: usage,
-    summary,
+    summary: {
+      totalMinutes: aggregation._sum.minutes || 0,
+      totalDataMB: aggregation._sum.dataMB || 0,
+      totalSms: aggregation._sum.smsCount || 0,
+    },
   })
 }
 
@@ -94,7 +97,7 @@ export const getSubscriptionInvoices = async (req: Request, res: Response) => {
     where: { subscriptionId: id },
   })
 
-  if (!invoices) {
+  if (invoices.length === 0) {
     throw notFound('No invoices found')
   }
 
