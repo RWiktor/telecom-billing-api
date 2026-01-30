@@ -3,8 +3,36 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { useAuth } from '@/context/AuthContext'
+import { useNavigate } from 'react-router-dom'
+import { useActionState } from 'react'
+
+interface LoginState {
+  success?: string
+  error?: string
+}
 
 export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) {
+  const navigate = useNavigate()
+  const { login } = useAuth()
+
+  async function handleLogin(prevState: LoginState | null, formData: FormData) {
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    try {
+      await login(email, password)
+      navigate('/dashboard')
+      return { success: 'Login successful' }
+    } catch (error: any) {
+      return {
+        error: error.response?.data?.message || 'Invalid email or password',
+      }
+    }
+  }
+
+  const [state, formAction, isPending] = useActionState(handleLogin, { error: undefined })
+
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card>
@@ -13,11 +41,11 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
           <CardDescription>Enter your email below to login to your account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form action={formAction}>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor='email'>Email</FieldLabel>
-                <Input id='email' type='email' placeholder='m@example.com' required />
+                <Input id='email' name='email' type='email' placeholder='m@example.com' required />
               </Field>
               <Field>
                 <div className='flex items-center'>
@@ -29,10 +57,17 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
                     Forgot your password?
                   </a>
                 </div>
-                <Input id='password' type='password' required />
+                <Input id='password' name='password' type='password' required />
               </Field>
+
+              {state?.error && (
+                <p className='text-sm font-medium text-destructive text-center'>{state.error}</p>
+              )}
+
               <Field>
-                <Button type='submit'>Login</Button>
+                <Button type='submit' className='w-full' disabled={isPending}>
+                  {isPending ? 'Logging in...' : 'Login'}
+                </Button>
                 <FieldDescription className='text-center'>
                   Don&apos;t have an account? <a href='#'>Sign up</a>
                 </FieldDescription>
