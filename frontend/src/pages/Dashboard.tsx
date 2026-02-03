@@ -4,6 +4,7 @@ import api from '@/api'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Spinner } from '@/components/ui/spinner'
 
 export default function Dashboard() {
   const { user, logout } = useAuth()
@@ -42,7 +43,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className='min-h-screen flex items-center justify-center'>
-        <div className='text-muted-foreground'>Loading...</div>
+        <Spinner className='size-10' />
       </div>
     )
   }
