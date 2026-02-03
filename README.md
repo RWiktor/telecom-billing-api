@@ -1,6 +1,8 @@
 # 📞 Telecom Billing API
 
-*Temporary docs* — telecom billing API (plans, subscriptions, usage, invoices). Backend: Express + Prisma + PostgreSQL. Frontend: React.
+⚠️ This project is currently a work-in-progress. I am actively adding new features, refining the architecture, and improving the codebase.
+
+_Temporary docs_ — telecom billing API (plans, subscriptions, usage, invoices). Backend: Express + Prisma + PostgreSQL. Frontend: React.
 
 ## 🚀 Quick start
 
