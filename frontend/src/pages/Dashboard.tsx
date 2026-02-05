@@ -5,18 +5,14 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
+import Header from '@/components/Header'
 
 export default function Dashboard() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [subscriptions, setSubscriptions] = useState([])
   const [invoices, setInvoices] = useState([])
-
-  const handleLogout = () => {
-    logout()
-    navigate('/login', { replace: true })
-  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -50,20 +46,7 @@ export default function Dashboard() {
 
   return (
     <div className='min-h-screen bg-background'>
-      {/* Header */}
-      <header className='border-b bg-card'>
-        <div className='container mx-auto px-4 py-4 flex items-center justify-between'>
-          <div>
-            <h1 className='text-2xl font-bold text-foreground'>Dashboard</h1>
-            <p className='text-sm text-muted-foreground mt-1'>
-              Welcome, {user?.name || user?.email}!
-            </p>
-          </div>
-          <Button variant='default' onClick={handleLogout}>
-            Logout
-          </Button>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className='container mx-auto px-4 py-8'>
