@@ -4,6 +4,15 @@ import api from '@/api'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Spinner } from '@/components/ui/spinner'
 import Header from '@/components/Header'
 
@@ -93,87 +102,84 @@ export default function Dashboard() {
         <div className='mb-8'>
           <h2 className='text-xl font-semibold mb-4 text-foreground'>Invoices</h2>
 
-          {invoices.length === 0 ? (
-            <Card>
+          <Card>
+            {invoices.length === 0 ? (
               <CardContent className='py-8'>
                 <p className='text-center text-muted-foreground'>No invoices</p>
               </CardContent>
-            </Card>
-          ) : (
-            <div className='space-y-4'>
-              {invoices.map((invoice: any) => {
-                const subscription = subscriptions.find(
-                  (sub: any) => sub.id === invoice.subscriptionId,
-                ) as any
-                const monthNames = [
-                  'January',
-                  'February',
-                  'March',
-                  'April',
-                  'May',
-                  'June',
-                  'July',
-                  'August',
-                  'September',
-                  'October',
-                  'November',
-                  'December',
-                ]
-                const statusColors: Record<string, string> = {
-                  PAID: 'text-green-600',
-                  UNPAID: 'text-yellow-600',
-                  OVERDUE: 'text-red-600',
-                  CANCELLED: 'text-gray-600',
-                }
+            ) : (
+              <CardContent className='p-0'>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Period</TableHead>
+                      <TableHead>Phone Number</TableHead>
+                      <TableHead>Base Fee</TableHead>
+                      <TableHead>Overage Fee</TableHead>
+                      <TableHead className='text-right'>Total</TableHead>
+                      <TableHead className='text-right'>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {invoices.map((invoice: any) => {
+                      const subscription = subscriptions.find(
+                        (sub: any) => sub.id === invoice.subscriptionId,
+                      ) as any
+                      const monthNames = [
+                        'January',
+                        'February',
+                        'March',
+                        'April',
+                        'May',
+                        'June',
+                        'July',
+                        'August',
+                        'September',
+                        'October',
+                        'November',
+                        'December',
+                      ]
+                      const statusColors: Record<string, string> = {
+                        PAID: 'bg-green-100 text-green-700',
+                        UNPAID: 'bg-yellow-100 text-yellow-700',
+                        OVERDUE: 'bg-red-100 text-red-700',
+                        CANCELLED: 'bg-gray-100 text-gray-700',
+                      }
 
-                return (
-                  <Card key={invoice.id}>
-                    <CardContent className='pt-6'>
-                      <div className='flex justify-between items-start'>
-                        <div className='space-y-2'>
-                          <div className='flex items-center gap-4'>
-                            <h3 className='font-semibold text-lg'>
-                              {monthNames[invoice.month - 1]} {invoice.year}
-                            </h3>
+                      return (
+                        <TableRow key={invoice.id}>
+                          <TableCell className='font-medium'>
+                            {monthNames[invoice.month - 1]} {invoice.year}
+                          </TableCell>
+                          <TableCell className='text-muted-foreground'>
+                            {subscription?.phoneNumber || '—'}
+                          </TableCell>
+                          <TableCell>{Number(invoice.baseFee).toFixed(2)} PLN</TableCell>
+                          <TableCell>
+                            {Number(invoice.overageFee) > 0
+                              ? `${Number(invoice.overageFee).toFixed(2)} PLN`
+                              : '—'}
+                          </TableCell>
+                          <TableCell className='text-right font-semibold'>
+                            {Number(invoice.totalAmount).toFixed(2)} PLN
+                          </TableCell>
+                          <TableCell className='text-right'>
                             <span
-                              className={`text-sm font-medium ${
-                                statusColors[invoice.status] || 'text-gray-600'
+                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                statusColors[invoice.status] || 'bg-gray-100 text-gray-700'
                               }`}
                             >
                               {invoice.status}
                             </span>
-                          </div>
-                          {subscription && (
-                            <p className='text-sm text-muted-foreground'>
-                              {subscription.phoneNumber}
-                            </p>
-                          )}
-                          <div className='text-sm space-y-1'>
-                            <div className='flex justify-between gap-4'>
-                              <span className='text-muted-foreground'>Base fee:</span>
-                              <span>{Number(invoice.baseFee).toFixed(2)} PLN</span>
-                            </div>
-                            {Number(invoice.overageFee) > 0 && (
-                              <div className='flex justify-between gap-4'>
-                                <span className='text-muted-foreground'>Overage fee:</span>
-                                <span>{Number(invoice.overageFee).toFixed(2)} PLN</span>
-                              </div>
-                            )}
-                            <div className='flex justify-between gap-4 pt-2 border-t'>
-                              <span className='font-semibold'>Total:</span>
-                              <span className='font-semibold'>
-                                {Number(invoice.totalAmount).toFixed(2)} PLN
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
-          )}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            )}
+          </Card>
         </div>
       </main>
     </div>
