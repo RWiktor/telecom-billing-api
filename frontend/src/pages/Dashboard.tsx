@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table'
 import { Spinner } from '@/components/ui/spinner'
 import Header from '@/components/Header'
+import Footer from '@/components/Footer'
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -54,11 +55,11 @@ export default function Dashboard() {
   }
 
   return (
-    <div className='min-h-screen bg-background'>
+    <div className='min-h-screen bg-background flex flex-col'>
       <Header />
 
       {/* Main Content */}
-      <main className='container mx-auto px-4 py-8'>
+      <main className='container mx-auto px-4 py-8 flex-1'>
         {/* Numbers Section */}
         <div className='mb-8'>
           <h2 className='text-xl font-semibold mb-4 text-foreground'>My Numbers</h2>
@@ -182,6 +183,8 @@ export default function Dashboard() {
           </Card>
         </div>
       </main>
+
+      <Footer />
     </div>
   )
 }
