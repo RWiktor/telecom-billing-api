@@ -1,18 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import api from '../api'
-
-interface User {
-  id: string
-  email: string
-  name?: string
-}
-
-interface AuthContextType {
-  user: User | null
-  loading: boolean
-  login: (email: string, password: string) => Promise<any>
-  logout: () => void
-}
+import type { User, AuthContextType, LoginResponse } from '@/types'
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -36,9 +24,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     initAuth()
   }, [])
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<LoginResponse> => {
     try {
-      const { data } = await api.post<{ token: string; user: User }>('/auth/login', {
+      const { data } = await api.post<LoginResponse>('/auth/login', {
         email,
         password,
       })

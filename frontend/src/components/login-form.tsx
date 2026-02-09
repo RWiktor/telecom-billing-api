@@ -6,17 +6,22 @@ import { Input } from '@/components/ui/input'
 import { useAuth } from '@/context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { useActionState } from 'react'
+import { AxiosError } from 'axios'
 
 interface LoginState {
   success?: string
   error?: string
 }
 
+interface ApiErrorResponse {
+  message?: string
+}
+
 export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) {
   const navigate = useNavigate()
   const { login } = useAuth()
 
-  async function handleLogin(prevState: LoginState | null, formData: FormData) {
+  async function handleLogin(_prevState: LoginState | null, formData: FormData) {
     const email = formData.get('email') as string
     const password = formData.get('password') as string
 
@@ -24,14 +29,15 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
       await login(email, password)
       navigate('/dashboard')
       return { success: 'Login successful' }
-    } catch (error: any) {
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiErrorResponse>
       return {
-        error: error.response?.data?.message || 'Invalid email or password',
+        error: axiosError.response?.data?.message || 'Invalid email or password',
       }
     }
   }
 
-  const [state, formAction, isPending] = useActionState(handleLogin, { error: undefined })
+  const [state, formAction, isPending] = useActionState(handleLogin, null)
 
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>

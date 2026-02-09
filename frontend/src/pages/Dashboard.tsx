@@ -8,7 +8,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -16,24 +15,47 @@ import {
 import { Spinner } from '@/components/ui/spinner'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import type { Subscription, Invoice, UserWithSubscriptions, InvoiceStatus } from '@/types'
+
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+] as const
+
+const STATUS_COLORS: Record<InvoiceStatus, string> = {
+  PAID: 'bg-green-100 text-green-700',
+  UNPAID: 'bg-yellow-100 text-yellow-700',
+  OVERDUE: 'bg-red-100 text-red-700',
+  CANCELLED: 'bg-gray-100 text-gray-700',
+}
 
 export default function Dashboard() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
-  const [subscriptions, setSubscriptions] = useState([])
-  const [invoices, setInvoices] = useState([])
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
+  const [invoices, setInvoices] = useState<Invoice[]>([])
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: userData } = await api.get(`/users/${user?.id}`)
+        const { data: userData } = await api.get<UserWithSubscriptions>(`/users/${user?.id}`)
         const subscriptionsData = userData?.subscriptions || []
         setSubscriptions(subscriptionsData)
 
-        const { data: invoicesData } = await api.get('/invoices')
-        const subscriptionIds = subscriptionsData.map((sub: any) => sub.id)
-        const userInvoices = invoicesData.filter((invoice: any) =>
+        const { data: invoicesData } = await api.get<Invoice[]>('/invoices')
+        const subscriptionIds = subscriptionsData.map((sub) => sub.id)
+        const userInvoices = invoicesData.filter((invoice) =>
           subscriptionIds.includes(invoice.subscriptionId),
         )
         setInvoices(userInvoices)
@@ -72,7 +94,7 @@ export default function Dashboard() {
             </Card>
           ) : (
             <section className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-              {subscriptions.map((subscription: any) => (
+              {subscriptions.map((subscription) => (
                 <Card key={subscription.id}>
                   <CardHeader>
                     <CardTitle className='text-lg'>{subscription.phoneNumber}</CardTitle>
@@ -122,35 +144,15 @@ export default function Dashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {invoices.map((invoice: any) => {
+                    {invoices.map((invoice) => {
                       const subscription = subscriptions.find(
-                        (sub: any) => sub.id === invoice.subscriptionId,
-                      ) as any
-                      const monthNames = [
-                        'January',
-                        'February',
-                        'March',
-                        'April',
-                        'May',
-                        'June',
-                        'July',
-                        'August',
-                        'September',
-                        'October',
-                        'November',
-                        'December',
-                      ]
-                      const statusColors: Record<string, string> = {
-                        PAID: 'bg-green-100 text-green-700',
-                        UNPAID: 'bg-yellow-100 text-yellow-700',
-                        OVERDUE: 'bg-red-100 text-red-700',
-                        CANCELLED: 'bg-gray-100 text-gray-700',
-                      }
+                        (sub) => sub.id === invoice.subscriptionId,
+                      )
 
                       return (
                         <TableRow key={invoice.id}>
                           <TableCell className='font-medium'>
-                            {monthNames[invoice.month - 1]} {invoice.year}
+                            {MONTH_NAMES[invoice.month - 1]} {invoice.year}
                           </TableCell>
                           <TableCell className='text-muted-foreground'>
                             {subscription?.phoneNumber || '—'}
@@ -167,7 +169,7 @@ export default function Dashboard() {
                           <TableCell className='text-right'>
                             <span
                               className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                statusColors[invoice.status] || 'bg-gray-100 text-gray-700'
+                                STATUS_COLORS[invoice.status] || 'bg-gray-100 text-gray-700'
                               }`}
                             >
                               {invoice.status}
