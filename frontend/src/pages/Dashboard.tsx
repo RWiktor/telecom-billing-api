@@ -16,6 +16,7 @@ import { Spinner } from '@/components/ui/spinner'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import type { Subscription, Invoice, UserWithSubscriptions, InvoiceStatus } from '@/types'
+import OverdueAlert from '@/components/OverdueAlert'
 
 const MONTH_NAMES = [
   'January',
@@ -45,6 +46,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [overdueInvoices, setOverdueInvoices] = useState<number>(0)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -59,6 +61,7 @@ export default function Dashboard() {
           subscriptionIds.includes(invoice.subscriptionId),
         )
         setInvoices(userInvoices)
+        setOverdueInvoices(userInvoices.filter((inv) => inv.status === 'OVERDUE').length)
       } catch (error) {
         console.error(error)
       } finally {
@@ -125,7 +128,9 @@ export default function Dashboard() {
         <div className='mb-8'>
           <h2 className='text-xl font-semibold mb-4 text-foreground'>Invoices</h2>
 
-          <Card>
+          {overdueInvoices > 0 && <OverdueAlert overdueInvoices={overdueInvoices} />}
+
+          <Card className='mt-4'>
             {invoices.length === 0 ? (
               <CardContent className='py-8'>
                 <p className='text-center text-muted-foreground'>No invoices</p>
