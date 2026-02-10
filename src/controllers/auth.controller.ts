@@ -51,7 +51,20 @@ export const getMe = async (req: AuthRequest, res: Response) => {
 
   const user = await prisma.user.findUnique({
     where: { id: req.userId },
-    select: userSelect,
+    select: {
+      ...userSelect,
+      subscriptions: {
+        include: {
+          plan: {
+            select: {
+              id: true,
+              name: true,
+              monthlyFee: true,
+            },
+          },
+        },
+      },
+    },
   })
 
   if (!user) {

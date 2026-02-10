@@ -14,7 +14,6 @@ export const usageQuerySchema = z
   })
 
 export const createSubscriptionSchema = z.object({
-  userId: z.coerce.number().int().positive(),
   planId: z.coerce.number().int().positive(),
   phoneNumber: z.string().regex(/^\+\d{11}$/, 'Format: +123456789012'),
 })

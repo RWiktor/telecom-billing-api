@@ -4,6 +4,10 @@ import { notFound } from '../utils/errors'
 import { validate } from '../utils/validation'
 import { createUsageSchema, idParamSchema } from '../schemas/usage.schema'
 
+//
+// only for admin, maybe i'll add admin panel in the future?
+//
+
 export const getUsageById = async (req: Request, res: Response) => {
   const { id } = validate(idParamSchema, req.params)
 

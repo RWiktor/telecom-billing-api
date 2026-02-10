@@ -51,7 +51,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: userData } = await api.get<UserWithSubscriptions>(`/users/${user?.id}`)
+        const { data: userData } = await api.get<UserWithSubscriptions>('/auth/me')
         const subscriptionsData = userData?.subscriptions || []
         setSubscriptions(subscriptionsData)
 

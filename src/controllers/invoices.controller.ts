@@ -4,16 +4,20 @@ import { notFound, badRequest } from '../utils/errors'
 import { validate } from '../utils/validation'
 import { idParamSchema, generateInvoiceSchema } from '../schemas/invoices.schema'
 import { InvoiceStatus, Prisma } from '../../prisma/generated/client'
+import { AuthRequest } from '../middleware/auth.middleware'
 
-export const getInvoices = async (req: Request, res: Response) => {
-  const invoices = await prisma.invoice.findMany()
+export const getInvoices = async (req: AuthRequest, res: Response) => {
+  const userId = req.userId
+
+  const invoices = await prisma.invoice.findMany({ where: { subscription: { userId } } })
   res.json(invoices)
 }
 
-export const getInvoiceById = async (req: Request, res: Response) => {
+export const getInvoiceById = async (req: AuthRequest, res: Response) => {
   const { id } = validate(idParamSchema, req.params)
+  const userId = req.userId
 
-  const invoice = await prisma.invoice.findUnique({ where: { id } })
+  const invoice = await prisma.invoice.findUnique({ where: { id, subscription: { userId } } })
 
   if (!invoice) {
     throw notFound('Invoice not found')
@@ -22,12 +26,13 @@ export const getInvoiceById = async (req: Request, res: Response) => {
   res.json(invoice)
 }
 
-export const payInvoice = async (req: Request, res: Response) => {
+export const payInvoice = async (req: AuthRequest, res: Response) => {
   const { id } = validate(idParamSchema, req.params)
+  const userId = req.userId
 
   try {
     const paidInvoice = await prisma.invoice.update({
-      where: { id, status: InvoiceStatus.UNPAID },
+      where: { id, status: InvoiceStatus.UNPAID, subscription: { userId } },
       data: {
         status: InvoiceStatus.PAID,
         paidAt: new Date(),
@@ -42,11 +47,12 @@ export const payInvoice = async (req: Request, res: Response) => {
   }
 }
 
-export const generateInvoice = async (req: Request, res: Response) => {
+export const generateInvoice = async (req: AuthRequest, res: Response) => {
   const { subscriptionId, year, month } = validate(generateInvoiceSchema, req.body)
+  const userId = req.userId
 
   const subscription = await prisma.subscription.findUnique({
-    where: { id: subscriptionId },
+    where: { id: subscriptionId, userId },
     include: { plan: true },
   })
 

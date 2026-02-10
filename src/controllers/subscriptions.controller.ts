@@ -1,4 +1,4 @@
-import type { Request, Response } from 'express'
+import type { Response } from 'express'
 import { prisma } from '../db'
 import { notFound, badRequest } from '../utils/errors'
 import { validate } from '../utils/validation'
@@ -8,6 +8,7 @@ import {
   createSubscriptionSchema,
 } from '../schemas/subscriptions.schema'
 import { Prisma } from '../../prisma/generated/client'
+import { AuthRequest } from '../middleware/auth.middleware'
 
 const userSelect: Prisma.UserSelect = {
   id: true,
@@ -22,18 +23,21 @@ const subscriptionInclude: Prisma.SubscriptionInclude = {
   plan: true,
 }
 
-export const getSubscriptions = async (req: Request, res: Response) => {
+export const getSubscriptions = async (req: AuthRequest, res: Response) => {
+  const userId = req.userId
   const subscriptions = await prisma.subscription.findMany({
+    where: { userId },
     include: subscriptionInclude,
   })
   res.json(subscriptions)
 }
 
-export const getSubscriptionById = async (req: Request, res: Response) => {
+export const getSubscriptionById = async (req: AuthRequest, res: Response) => {
   const { id } = validate(idParamSchema, req.params)
+  const userId = req.userId
 
   const subscription = await prisma.subscription.findUnique({
-    where: { id },
+    where: { id, userId },
     include: subscriptionInclude,
   })
 
@@ -44,19 +48,20 @@ export const getSubscriptionById = async (req: Request, res: Response) => {
   res.json(subscription)
 }
 
-export const getSubscriptionUsage = async (req: Request, res: Response) => {
+export const getSubscriptionUsage = async (req: AuthRequest, res: Response) => {
   const { id } = validate(idParamSchema, req.params)
   const query = validate(usageQuerySchema, req.query)
+  const userId = req.userId
 
   const subscription = await prisma.subscription.findUnique({
-    where: { id },
+    where: { id, userId },
   })
 
   if (!subscription) {
     throw notFound('Subscription not found')
   }
 
-  const where: any = { subscriptionId: id }
+  const where: any = { subscriptionId: id, userId }
 
   if (query.year && query.month) {
     where.timestamp = {
@@ -90,11 +95,12 @@ export const getSubscriptionUsage = async (req: Request, res: Response) => {
   })
 }
 
-export const getSubscriptionInvoices = async (req: Request, res: Response) => {
+export const getSubscriptionInvoices = async (req: AuthRequest, res: Response) => {
   const { id } = validate(idParamSchema, req.params)
+  const userId = req.userId
 
   const invoices = await prisma.invoice.findMany({
-    where: { subscriptionId: id },
+    where: { subscriptionId: id, subscription: { userId } },
   })
 
   if (invoices.length === 0) {
@@ -104,16 +110,9 @@ export const getSubscriptionInvoices = async (req: Request, res: Response) => {
   res.json(invoices)
 }
 
-export const createSubscription = async (req: Request, res: Response) => {
+export const createSubscription = async (req: AuthRequest, res: Response) => {
   const data = validate(createSubscriptionSchema, req.body)
-
-  const user = await prisma.user.findUnique({
-    where: { id: data.userId },
-  })
-
-  if (!user) {
-    throw notFound('User not found')
-  }
+  const userId = req.userId!
 
   const plan = await prisma.plan.findUnique({
     where: { id: data.planId },
@@ -133,7 +132,7 @@ export const createSubscription = async (req: Request, res: Response) => {
 
   const subscription = await prisma.subscription.create({
     data: {
-      userId: data.userId,
+      userId,
       planId: data.planId,
       phoneNumber: data.phoneNumber,
       startDate: new Date(),
@@ -144,18 +143,22 @@ export const createSubscription = async (req: Request, res: Response) => {
   res.status(201).json(subscription)
 }
 
-export const deleteSubscription = async (req: Request, res: Response) => {
+// not sure about this, at this moment only for testing
+export const deleteSubscription = async (req: AuthRequest, res: Response) => {
   const { id } = validate(idParamSchema, req.params)
+  const userId = req.userId!
 
-  try {
-    const deletedSubscription = await prisma.subscription.delete({
-      where: { id },
-    })
-    res.status(204).json(deletedSubscription)
-  } catch (error: any) {
-    if (error.code === 'P2025') {
-      throw notFound('Subscription not found')
-    }
-    throw error
+  const subscription = await prisma.subscription.findFirst({
+    where: { id, userId },
+  })
+
+  if (!subscription) {
+    throw notFound('Subscription not found')
   }
+
+  await prisma.subscription.delete({
+    where: { id },
+  })
+
+  res.status(204).send()
 }

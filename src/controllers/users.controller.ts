@@ -13,6 +13,10 @@ const userSelect: Prisma.UserSelect = {
   updatedAt: true,
 }
 
+//
+// only for admin, maybe i'll add admin panel in the future?
+//
+
 export const getUsers = async (req: Request, res: Response) => {
   const users = await prisma.user.findMany({
     select: userSelect,
