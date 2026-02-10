@@ -10,8 +10,8 @@ import { invoicesRouter } from './invoices.routes'
 export const indexRouter: Router = express.Router()
 
 indexRouter.use('/auth', authRouter)
-indexRouter.use('/users', usersRouter)
+// indexRouter.use('/users', usersRouter) // disabled for now
 indexRouter.use('/plans', plansRouter)
 indexRouter.use('/subscriptions', subscriptionsRouter)
-indexRouter.use('/usage', usageRouter)
+// indexRouter.use('/usage', usageRouter) // disabled for now
 indexRouter.use('/invoices', invoicesRouter)
