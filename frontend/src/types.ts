@@ -74,6 +74,11 @@ export interface UserWithSubscriptions extends User {
   subscriptions: Subscription[]
 }
 
+export interface InvoicesTableProps {
+  invoices: Invoice[]
+  subscriptions: Subscription[]
+}
+
 export interface AuthContextType {
   user: User | null
   loading: boolean
