@@ -61,7 +61,7 @@ export const getSubscriptionUsage = async (req: AuthRequest, res: Response) => {
     throw notFound('Subscription not found')
   }
 
-  const where: any = { subscriptionId: id, userId }
+  const where: any = { subscriptionId: id }
 
   if (query.year && query.month) {
     where.timestamp = {
