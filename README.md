@@ -2,7 +2,12 @@
 
 ⚠️ This project is currently a work-in-progress. I am actively adding new features, refining the architecture, and improving the codebase.
 
-_Temporary docs_ — telecom billing API (plans, subscriptions, usage, invoices). Backend: Express + Prisma + PostgreSQL. Frontend: React.
+_Temporary docs_ — telecom billing API (plans, subscriptions, usage, invoices). Backend: Express + Prisma + PostgreSQL. Frontend: React + shadcn.
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/27c2fc3d-5c56-4b75-9e7c-394de6abd0ec" width="80%">
+  <p><i>Screenshot updated: 12.02.2026</i></p>
+</div>
 
 ## 🚀 Quick start
 
