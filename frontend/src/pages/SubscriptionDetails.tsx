@@ -1,0 +1,112 @@
+import api from '@/api'
+import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import type { Subscription } from '@/types'
+import { Spinner } from '@/components/ui/spinner'
+import Footer from '@/components/Footer'
+import Header from '@/components/Header'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+
+export default function SubscriptionDetail() {
+  const { id } = useParams()
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const subscriptionData = await api.get<Subscription>(`/subscriptions/${id}`)
+        setSubscription(subscriptionData.data)
+      } catch {
+        setSubscription(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchSubscription()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className='min-h-screen flex items-center justify-center'>
+        <Spinner className='size-10' />
+      </div>
+    )
+  }
+
+  if (!subscription) {
+    return (
+      <div className='min-h-screen bg-background flex flex-col'>
+        <Header />
+        <main className='container mx-auto px-4 py-8 flex-1'>
+          <Card>
+            <CardContent className='py-8'>
+              <p className='text-center text-muted-foreground'>Subscription not found</p>
+              <Button className='mt-4 w-full' onClick={() => navigate('/dashboard')}>
+                Back to Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  return (
+    <div className='min-h-screen bg-background flex flex-col'>
+      <Header />
+      <main className='container mx-auto px-4 py-8 flex-1'>
+        <Button variant='ghost' className='mb-4 -ml-2' onClick={() => navigate('/dashboard')}>
+          ← Back to Dashboard
+        </Button>
+
+        <div className='mb-8'>
+          <h1 className='text-2xl font-bold text-foreground'>{subscription.phoneNumber}</h1>
+          <p className='text-muted-foreground mt-1'>
+            {subscription.plan.name} •{' '}
+            {!subscription.endDate || new Date(subscription.endDate) > new Date()
+              ? 'Active'
+              : 'Inactive'}
+          </p>
+
+          <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8 mt-8'>
+            <Card>
+              <CardHeader>
+                <CardTitle className='text-lg'>Plan</CardTitle>
+                <CardDescription>{subscription.plan.name}</CardDescription>
+              </CardHeader>
+              <CardContent className='space-y-2 text-sm'>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>Monthly fee:</span>
+                  <span>{Number(subscription.plan.monthlyFee).toFixed(2)} PLN</span>
+                </div>
+                {subscription.plan.minutesLimit != null && (
+                  <div className='flex justify-between'>
+                    <span className='text-muted-foreground'>Minutes limit:</span>
+                    <span>{subscription.plan.minutesLimit} min</span>
+                  </div>
+                )}
+                {subscription.plan.dataMBLimit != null && (
+                  <div className='flex justify-between'>
+                    <span className='text-muted-foreground'>Data limit:</span>
+                    <span>{(subscription.plan.dataMBLimit / 1000).toFixed(1)} GB</span>
+                  </div>
+                )}
+                {subscription.plan.smsLimit != null && (
+                  <div className='flex justify-between'>
+                    <span className='text-muted-foreground'>SMS limit:</span>
+                    <span>{subscription.plan.smsLimit}</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  )
+}

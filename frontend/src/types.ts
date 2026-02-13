@@ -1,35 +1,36 @@
+export type ApiId = number
+
+export type DecimalLike = number | string
+
 export interface User {
-  id: string
+  id: ApiId
   email: string
-  name?: string
-  createdAt: string
-  updatedAt: string
+  name: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface Plan {
-  id: string
+  id: ApiId
   name: string
-  monthlyFee: number
-  dataLimit: number
-  minutesLimit: number
-  smsLimit: number
-  overageRates: {
-    perMB: number
-    perMinute: number
-    perSMS: number
-  }
-  createdAt: string
-  updatedAt: string
+  monthlyFee: DecimalLike
+  minutesLimit?: number | null
+  dataMBLimit?: number | null
+  smsLimit?: number | null
+  overageMinutePrice?: DecimalLike | null
+  overageDataPrice?: DecimalLike | null
+  overageSmsPrice?: DecimalLike | null
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface Subscription {
-  id: string
-  userId: string
-  planId: string
+  id: ApiId
+  userId: ApiId
+  planId: ApiId
   phoneNumber: string
   startDate: string
   endDate: string | null
-  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
   createdAt: string
   updatedAt: string
   plan: Plan
@@ -39,35 +40,42 @@ export interface Subscription {
 export type InvoiceStatus = 'PAID' | 'UNPAID' | 'OVERDUE' | 'CANCELLED'
 
 export interface Invoice {
-  id: string
-  subscriptionId: string
-  month: number
+  id: ApiId
+  subscriptionId: ApiId
   year: number
-  baseFee: number
-  overageFee: number
-  totalAmount: number
+  month: number
+  baseFee: DecimalLike
+  overageFee: DecimalLike
+  totalAmount: DecimalLike
   status: InvoiceStatus
-  dueDate: string
   paidAt: string | null
   createdAt: string
   updatedAt: string
   subscription?: Subscription
 }
 
-export interface Usage {
-  id: string
-  subscriptionId: string
-  usageDate: string
-  dataUsageMB: number
-  voiceMinutes: number
+export interface UsageRecord {
+  id: ApiId
+  subscriptionId: ApiId
+  timestamp: string
+  minutes: number
+  dataMB: number
   smsCount: number
   createdAt: string
-  subscription?: Subscription
+}
+
+export interface SubscriptionUsageResponse {
+  records: UsageRecord[]
+  summary: {
+    totalMinutes: number
+    totalDataMB: number
+    totalSms: number
+  }
 }
 
 export interface LoginResponse {
   token: string
-  user: User
+  user: Pick<User, 'id' | 'email' | 'name'>
 }
 
 export interface UserWithSubscriptions extends User {

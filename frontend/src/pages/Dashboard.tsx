@@ -84,7 +84,11 @@ export default function Dashboard() {
                             : 'Inactive'}
                         </span>
                       </div>
-                      <Button variant='outline' className='w-full'>
+                      <Button
+                        variant='outline'
+                        className='w-full'
+                        onClick={() => navigate(`/subscription/${subscription.id}`)}
+                      >
                         View Details
                       </Button>
                     </div>

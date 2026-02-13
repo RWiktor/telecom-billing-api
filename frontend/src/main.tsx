@@ -4,6 +4,7 @@ import { Navigate, createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './pages/Login.tsx'
 import Dashboard from './pages/Dashboard.tsx'
+import SubscriptionDetail from './pages/SubscriptionDetails.tsx'
 import './index.css'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -22,6 +23,14 @@ const router = createBrowserRouter([
     element: (
       <PrivateRoute>
         <Dashboard />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: '/subscription/:id',
+    element: (
+      <PrivateRoute>
+        <SubscriptionDetail />
       </PrivateRoute>
     ),
   },
