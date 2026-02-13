@@ -15,7 +15,9 @@ export default function Header() {
     <header className='border-b bg-card'>
       <div className='container mx-auto px-4 py-4 flex items-center justify-between'>
         <div>
-          <h1 className='text-2xl font-bold text-foreground'>Dashboard</h1>
+          <h1 className='text-2xl font-bold text-foreground' onClick={() => navigate('/dashboard')}>
+            Dashboard
+          </h1>
           <p className='text-sm text-muted-foreground mt-1'>
             Welcome, {user?.name || user?.email}!
           </p>
