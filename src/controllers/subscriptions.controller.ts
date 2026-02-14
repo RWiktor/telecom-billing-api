@@ -103,10 +103,6 @@ export const getSubscriptionInvoices = async (req: AuthRequest, res: Response) =
     where: { subscriptionId: id, subscription: { userId } },
   })
 
-  if (invoices.length === 0) {
-    throw notFound('No invoices found')
-  }
-
   res.json(invoices)
 }
 

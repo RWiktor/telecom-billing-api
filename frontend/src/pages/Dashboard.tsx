@@ -5,11 +5,12 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import InvoicesTable from '@/components/InvoicesTable'
-import { Spinner } from '@/components/ui/spinner'
+import PageSpinner from '@/components/PageSpinner'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import type { Subscription, Invoice, UserWithSubscriptions } from '@/types'
 import OverdueAlert from '@/components/OverdueAlert'
+import { useDelayedSpinner } from '@/hooks/useDelayedSpinner'
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -18,23 +19,23 @@ export default function Dashboard() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [overdueInvoices, setOverdueInvoices] = useState<number>(0)
+  const showSpinner = useDelayedSpinner(loading)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: userData } = await api.get<UserWithSubscriptions>('/auth/me')
-        const subscriptionsData = userData?.subscriptions || []
-        setSubscriptions(subscriptionsData)
-
-        const { data: invoicesData } = await api.get<Invoice[]>('/invoices')
-        const subscriptionIds = subscriptionsData.map((sub) => sub.id)
-        const userInvoices = invoicesData.filter((invoice) =>
-          subscriptionIds.includes(invoice.subscriptionId),
-        )
-        setInvoices(userInvoices)
-        setOverdueInvoices(userInvoices.filter((inv) => inv.status === 'OVERDUE').length)
+        const [{ data: userData }, { data: invoicesData }] = await Promise.all([
+          api.get<UserWithSubscriptions>('/auth/me'),
+          api.get<Invoice[]>('/invoices'),
+        ])
+        setSubscriptions(userData?.subscriptions || [])
+        setInvoices(invoicesData || [])
+        setOverdueInvoices((invoicesData || []).filter((inv) => inv.status === 'OVERDUE').length)
       } catch (error) {
         console.error(error)
+        setSubscriptions([])
+        setInvoices([])
+        setOverdueInvoices(0)
       } finally {
         setLoading(false)
       }
@@ -42,13 +43,7 @@ export default function Dashboard() {
     fetchData()
   }, [user?.id])
 
-  if (loading) {
-    return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <Spinner className='size-10' />
-      </div>
-    )
-  }
+  if (showSpinner) return <PageSpinner />
 
   return (
     <div className='min-h-screen bg-background flex flex-col'>

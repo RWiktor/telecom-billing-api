@@ -1,37 +1,59 @@
 import api from '@/api'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import type { Subscription } from '@/types'
-import { Spinner } from '@/components/ui/spinner'
+import type { Invoice, Subscription } from '@/types'
+import PageSpinner from '@/components/PageSpinner'
 import Footer from '@/components/Footer'
 import Header from '@/components/Header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import InvoicesTable from '@/components/InvoicesTable'
+import { useDelayedSpinner } from '@/hooks/useDelayedSpinner'
 
 export default function SubscriptionDetail() {
   const { id } = useParams()
   const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
+  const showSpinner = useDelayedSpinner(loading)
 
   useEffect(() => {
-    const fetchSubscription = async () => {
-      try {
-        const subscriptionData = await api.get<Subscription>(`/subscriptions/${id}`)
-        setSubscription(subscriptionData.data)
-      } catch {
+    const fetchData = async () => {
+      const [subResult, invResult] = await Promise.allSettled([
+        api.get<Subscription>(`/subscriptions/${id}`),
+        api.get<Invoice[]>(`/subscriptions/${id}/invoices`),
+      ])
+
+      if (subResult.status === 'fulfilled') {
+        setSubscription(subResult.value.data)
+      } else {
         setSubscription(null)
-      } finally {
-        setLoading(false)
       }
+
+      if (invResult.status === 'fulfilled') {
+        setInvoices(invResult.value.data)
+      } else {
+        setInvoices([])
+      }
+
+      setLoading(false)
     }
-    fetchSubscription()
+    fetchData()
   }, [id])
+
+  if (showSpinner) return <PageSpinner />
 
   if (loading) {
     return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <Spinner className='size-10' />
+      <div className='min-h-screen bg-background flex flex-col'>
+        <Header />
+        <main className='container mx-auto px-4 py-8 flex-1'>
+          <Button variant='ghost' className='mb-4 -ml-2' onClick={() => navigate('/dashboard')}>
+            ← Back to Dashboard
+          </Button>
+        </main>
+        <Footer />
       </div>
     )
   }
@@ -103,6 +125,11 @@ export default function SubscriptionDetail() {
                 )}
               </CardContent>
             </Card>
+          </div>
+
+          <div className='mt-8'>
+            <h2 className='text-xl font-semibold mb-4 text-foreground'>Invoices</h2>
+            <InvoicesTable invoices={invoices} subscriptions={[subscription]} />
           </div>
         </div>
       </main>
