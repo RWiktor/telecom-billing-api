@@ -1,7 +1,7 @@
 import api from '@/api'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import type { Invoice, Subscription } from '@/types'
+import type { Invoice, Subscription, SubscriptionUsageResponse } from '@/types'
 import PageSpinner from '@/components/PageSpinner'
 import Footer from '@/components/Footer'
 import Header from '@/components/Header'
@@ -14,15 +14,23 @@ export default function SubscriptionDetail() {
   const { id } = useParams()
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [usage, setUsage] = useState<SubscriptionUsageResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
   const showSpinner = useDelayedSpinner(loading)
 
   useEffect(() => {
+    const now = new Date()
+    const params = new URLSearchParams({
+      year: String(now.getFullYear()),
+      month: String(now.getMonth() + 1),
+    })
+
     const fetchData = async () => {
-      const [subResult, invResult] = await Promise.allSettled([
+      const [subResult, invResult, usageResult] = await Promise.allSettled([
         api.get<Subscription>(`/subscriptions/${id}`),
         api.get<Invoice[]>(`/subscriptions/${id}/invoices`),
+        api.get<SubscriptionUsageResponse>(`/subscriptions/${id}/usage?${params}`),
       ])
 
       if (subResult.status === 'fulfilled') {
@@ -35,6 +43,12 @@ export default function SubscriptionDetail() {
         setInvoices(invResult.value.data)
       } else {
         setInvoices([])
+      }
+
+      if (usageResult.status === 'fulfilled') {
+        setUsage(usageResult.value.data)
+      } else {
+        setUsage(null)
       }
 
       setLoading(false)
@@ -123,6 +137,50 @@ export default function SubscriptionDetail() {
                     <span>{subscription.plan.smsLimit}</span>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className='text-lg'>Current usage</CardTitle>
+                <CardDescription>
+                  {new Date().toLocaleString('pl-PL', { month: 'long', year: 'numeric' })}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className='space-y-2 text-sm'>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>Minutes:</span>
+                  <span>
+                    {usage?.summary.totalMinutes ?? 0} min
+                    {subscription.plan.minutesLimit != null && (
+                      <span className='text-muted-foreground'>
+                        {' '}
+                        / {subscription.plan.minutesLimit}
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>Data:</span>
+                  <span>
+                    {usage ? (usage.summary.totalDataMB / 1000).toFixed(1) : 0} GB
+                    {subscription.plan.dataMBLimit != null && (
+                      <span className='text-muted-foreground'>
+                        {' '}
+                        / {(subscription.plan.dataMBLimit / 1000).toFixed(1)}
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <div className='flex justify-between'>
+                  <span className='text-muted-foreground'>SMS:</span>
+                  <span>
+                    {usage?.summary.totalSms ?? 0}
+                    {subscription.plan.smsLimit != null && (
+                      <span className='text-muted-foreground'> / {subscription.plan.smsLimit}</span>
+                    )}
+                  </span>
+                </div>
               </CardContent>
             </Card>
           </div>
