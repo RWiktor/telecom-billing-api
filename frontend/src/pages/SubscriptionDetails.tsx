@@ -12,6 +12,11 @@ import { useDelayedSpinner } from '@/hooks/useDelayedSpinner'
 
 export default function SubscriptionDetail() {
   const { id } = useParams()
+  const now = new Date()
+  const [usageMonth, setUsageMonth] = useState({
+    year: now.getFullYear(),
+    month: now.getMonth() + 1,
+  })
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [usage, setUsage] = useState<SubscriptionUsageResponse | null>(null)
@@ -19,18 +24,21 @@ export default function SubscriptionDetail() {
   const navigate = useNavigate()
   const showSpinner = useDelayedSpinner(loading)
 
-  useEffect(() => {
-    const now = new Date()
-    const params = new URLSearchParams({
-      year: String(now.getFullYear()),
-      month: String(now.getMonth() + 1),
-    })
+  const monthOptions = Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    return {
+      value: `${d.getFullYear()}-${d.getMonth() + 1}`,
+      label: d.toLocaleString('en-US', { month: 'long', year: 'numeric' }),
+      year: d.getFullYear(),
+      month: d.getMonth() + 1,
+    }
+  })
 
+  useEffect(() => {
     const fetchData = async () => {
-      const [subResult, invResult, usageResult] = await Promise.allSettled([
+      const [subResult, invResult] = await Promise.allSettled([
         api.get<Subscription>(`/subscriptions/${id}`),
         api.get<Invoice[]>(`/subscriptions/${id}/invoices`),
-        api.get<SubscriptionUsageResponse>(`/subscriptions/${id}/usage?${params}`),
       ])
 
       if (subResult.status === 'fulfilled') {
@@ -45,16 +53,22 @@ export default function SubscriptionDetail() {
         setInvoices([])
       }
 
-      if (usageResult.status === 'fulfilled') {
-        setUsage(usageResult.value.data)
-      } else {
-        setUsage(null)
-      }
-
       setLoading(false)
     }
     fetchData()
   }, [id])
+
+  useEffect(() => {
+    if (!id) return
+    const params = new URLSearchParams({
+      year: String(usageMonth.year),
+      month: String(usageMonth.month),
+    })
+    api
+      .get<SubscriptionUsageResponse>(`/subscriptions/${id}/usage?${params}`)
+      .then((res) => setUsage(res.data))
+      .catch(() => setUsage(null))
+  }, [id, usageMonth.year, usageMonth.month])
 
   if (showSpinner) return <PageSpinner />
 
@@ -142,10 +156,31 @@ export default function SubscriptionDetail() {
 
             <Card>
               <CardHeader>
-                <CardTitle className='text-lg'>Current usage</CardTitle>
-                <CardDescription>
-                  {new Date().toLocaleString('pl-PL', { month: 'long', year: 'numeric' })}
-                </CardDescription>
+                <div className='flex items-center justify-between gap-4'>
+                  <div>
+                    <CardTitle className='text-lg'>Usage</CardTitle>
+                    <CardDescription>
+                      {new Date(usageMonth.year, usageMonth.month - 1).toLocaleString('pl-PL', {
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </CardDescription>
+                  </div>
+                  <select
+                    value={`${usageMonth.year}-${usageMonth.month}`}
+                    onChange={(e) => {
+                      const [y, m] = e.target.value.split('-').map(Number)
+                      setUsageMonth({ year: y, month: m })
+                    }}
+                    className='rounded-md border border-input bg-background px-3 py-1.5 text-sm'
+                  >
+                    {monthOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </CardHeader>
               <CardContent className='space-y-2 text-sm'>
                 <div className='flex justify-between'>
