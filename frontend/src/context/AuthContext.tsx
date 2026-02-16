@@ -15,8 +15,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         try {
           const res = await api.get('/auth/me')
           setUser(res.data)
-        } catch (e) {
-          localStorage.removeItem('token')
+        } catch (e: unknown) {
+          if ((e as { response?: { status?: number } })?.response?.status === 401) {
+            localStorage.removeItem('token')
+          }
         }
       }
       setLoading(false)
