@@ -9,21 +9,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
-const MONTH_NAMES = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-] as const
-
 const STATUS_COLORS: Record<InvoiceStatus, string> = {
   PAID: 'bg-green-100 text-green-700',
   UNPAID: 'bg-yellow-100 text-yellow-700',
@@ -58,7 +43,10 @@ export default function InvoicesTable({ invoices, subscriptions }: InvoicesTable
                 return (
                   <TableRow key={invoice.id}>
                     <TableCell className='font-medium'>
-                      {MONTH_NAMES[invoice.month - 1]} {invoice.year}
+                      {new Date(invoice.year, invoice.month - 1, 1).toLocaleString('en-US', {
+                        month: 'long',
+                        year: 'numeric',
+                      })}
                     </TableCell>
                     <TableCell className='text-muted-foreground'>
                       {subscription?.phoneNumber || '—'}
