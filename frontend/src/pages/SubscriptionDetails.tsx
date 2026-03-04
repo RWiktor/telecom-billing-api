@@ -36,6 +36,7 @@ export default function SubscriptionDetail() {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!id) return
       const [subResult, invResult] = await Promise.allSettled([
         api.get<Subscription>(`/subscriptions/${id}`),
         api.get<Invoice[]>(`/subscriptions/${id}/invoices`),

@@ -1,5 +1,8 @@
-import type { InvoiceStatus, InvoicesTableProps } from '@/types'
+import { useState } from 'react'
+import api from '@/api'
+import type { Invoice, InvoiceStatus, InvoicesTableProps } from '@/types'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import {
   Table,
   TableBody,
@@ -16,7 +19,25 @@ const STATUS_COLORS: Record<InvoiceStatus, string> = {
   CANCELLED: 'bg-gray-100 text-gray-700',
 }
 
+const PAYABLE_STATUSES: InvoiceStatus[] = ['UNPAID', 'OVERDUE']
+
 export default function InvoicesTable({ invoices, subscriptions }: InvoicesTableProps) {
+  const [payingId, setPayingId] = useState<number | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handlePay(invoice: Invoice) {
+    setError(null)
+    setPayingId(invoice.id)
+    try {
+      await api.patch(`/invoices/${invoice.id}/pay`)
+      window.location.reload()
+    } catch {
+      setError('Payment failed. Please try again.')
+    } finally {
+      setPayingId(null)
+    }
+  }
+
   return (
     <Card className='mt-4'>
       {invoices.length === 0 ? (
@@ -25,6 +46,11 @@ export default function InvoicesTable({ invoices, subscriptions }: InvoicesTable
         </CardContent>
       ) : (
         <CardContent className='p-0'>
+          {error && (
+            <div className='px-6 pt-4 pb-0'>
+              <p className='text-sm text-destructive'>{error}</p>
+            </div>
+          )}
           <Table>
             <TableHeader>
               <TableRow>
@@ -34,11 +60,14 @@ export default function InvoicesTable({ invoices, subscriptions }: InvoicesTable
                 <TableHead>Overage Fee</TableHead>
                 <TableHead className='text-right'>Total</TableHead>
                 <TableHead className='text-right'>Status</TableHead>
+                <TableHead className='w-[100px]'></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {invoices.map((invoice) => {
                 const subscription = subscriptions.find((sub) => sub.id === invoice.subscriptionId)
+                const canPay = PAYABLE_STATUSES.includes(invoice.status)
+                const isPaying = payingId === invoice.id
 
                 return (
                   <TableRow key={invoice.id}>
@@ -68,6 +97,17 @@ export default function InvoicesTable({ invoices, subscriptions }: InvoicesTable
                       >
                         {invoice.status}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      {canPay && (
+                        <Button
+                          size='sm'
+                          disabled={isPaying}
+                          onClick={() => handlePay(invoice)}
+                        >
+                          {isPaying ? 'Paying...' : 'Pay'}
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 )

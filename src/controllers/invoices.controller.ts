@@ -32,7 +32,11 @@ export const payInvoice = async (req: AuthRequest, res: Response) => {
 
   try {
     const paidInvoice = await prisma.invoice.update({
-      where: { id, status: InvoiceStatus.UNPAID, subscription: { userId } },
+      where: {
+        id,
+        status: { in: [InvoiceStatus.UNPAID, InvoiceStatus.OVERDUE] },
+        subscription: { userId },
+      },
       data: {
         status: InvoiceStatus.PAID,
         paidAt: new Date(),
