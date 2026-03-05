@@ -161,7 +161,7 @@ export default function SubscriptionDetail() {
                   <div>
                     <CardTitle className='text-lg'>Usage</CardTitle>
                     <CardDescription>
-                      {new Date(usageMonth.year, usageMonth.month - 1).toLocaleString('pl-PL', {
+                      {new Date(usageMonth.year, usageMonth.month - 1).toLocaleString('en-EN', {
                         month: 'long',
                         year: 'numeric',
                       })}
