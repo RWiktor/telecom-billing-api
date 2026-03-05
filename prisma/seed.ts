@@ -1,12 +1,38 @@
-import { PrismaClient, Prisma } from './generated/client'
+import { PrismaClient } from './generated/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import bcrypt from 'bcrypt'
 
 const pool = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
 const prisma = new PrismaClient({ adapter: pool })
 
+function getLastTwoMonths() {
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth() + 1 // 1-based
+
+  const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1
+  const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear
+
+  const twoMonthsAgo = lastMonth === 1 ? 12 : lastMonth - 1
+  const twoMonthsAgoYear = lastMonth === 1 ? lastMonthYear - 1 : lastMonthYear
+
+  return {
+    last: { year: lastMonthYear, month: lastMonth },
+    twoMonthsAgo: { year: twoMonthsAgoYear, month: twoMonthsAgo },
+    now,
+  }
+}
+
 async function main() {
   console.log('Starting seed...')
+
+  const { last, twoMonthsAgo, now } = getLastTwoMonths()
+  const lastStart = new Date(last.year, last.month - 1, 1)
+  const twoStart = new Date(twoMonthsAgo.year, twoMonthsAgo.month - 1, 1)
+
+  console.log(
+    `Using dates: ${twoMonthsAgo.year}-${twoMonthsAgo.month} and ${last.year}-${last.month}`,
+  )
 
   console.log('Clearing database...')
   await prisma.invoice.deleteMany()
@@ -96,7 +122,7 @@ async function main() {
       userId: user1.id,
       planId: basicPlan.id,
       phoneNumber: '+48123456789',
-      startDate: new Date('2025-11-01'),
+      startDate: twoStart,
     },
   })
 
@@ -105,7 +131,7 @@ async function main() {
       userId: user1.id,
       planId: premiumPlan.id,
       phoneNumber: '+48987654321',
-      startDate: new Date('2025-12-15'),
+      startDate: new Date(last.year, last.month - 1, 15),
     },
   })
 
@@ -114,7 +140,7 @@ async function main() {
       userId: user2.id,
       planId: unlimitedPlan.id,
       phoneNumber: '+48555123456',
-      startDate: new Date('2025-10-01'),
+      startDate: twoStart,
     },
   })
 
@@ -123,7 +149,7 @@ async function main() {
       userId: user3.id,
       planId: premiumPlan.id,
       phoneNumber: '+48777888999',
-      startDate: new Date('2025-12-01'),
+      startDate: lastStart,
     },
   })
 
@@ -135,21 +161,21 @@ async function main() {
     data: [
       {
         subscriptionId: sub1.id,
-        timestamp: new Date('2025-12-05T10:30:00'),
+        timestamp: new Date(twoMonthsAgo.year, twoMonthsAgo.month - 1, 5, 10, 30),
         minutes: 200,
         dataMB: 3000,
         smsCount: 80,
       },
       {
         subscriptionId: sub1.id,
-        timestamp: new Date('2025-12-15T14:20:00'),
+        timestamp: new Date(twoMonthsAgo.year, twoMonthsAgo.month - 1, 15, 14, 20),
         minutes: 250,
         dataMB: 5000,
         smsCount: 90,
       },
       {
         subscriptionId: sub1.id,
-        timestamp: new Date('2025-12-28T09:15:00'),
+        timestamp: new Date(twoMonthsAgo.year, twoMonthsAgo.month - 1, 28, 9, 15),
         minutes: 150,
         dataMB: 4000,
         smsCount: 60,
@@ -161,14 +187,14 @@ async function main() {
     data: [
       {
         subscriptionId: sub1.id,
-        timestamp: new Date('2026-01-08T11:00:00'),
+        timestamp: new Date(last.year, last.month - 1, 8, 11, 0),
         minutes: 120,
         dataMB: 2000,
         smsCount: 40,
       },
       {
         subscriptionId: sub1.id,
-        timestamp: new Date('2026-01-15T16:30:00'),
+        timestamp: new Date(last.year, last.month - 1, 15, 16, 30),
         minutes: 80,
         dataMB: 1500,
         smsCount: 25,
@@ -180,14 +206,14 @@ async function main() {
     data: [
       {
         subscriptionId: sub2.id,
-        timestamp: new Date('2025-12-16T08:00:00'),
+        timestamp: new Date(last.year, last.month - 1, 16, 8, 0),
         minutes: 500,
         dataMB: 15000,
         smsCount: 200,
       },
       {
         subscriptionId: sub2.id,
-        timestamp: new Date('2025-12-28T19:00:00'),
+        timestamp: new Date(last.year, last.month - 1, 28, 19, 0),
         minutes: 400,
         dataMB: 12000,
         smsCount: 180,
@@ -199,7 +225,7 @@ async function main() {
     data: [
       {
         subscriptionId: sub2.id,
-        timestamp: new Date('2026-01-10T10:00:00'),
+        timestamp: new Date(last.year, last.month - 1, 10, 10, 0),
         minutes: 300,
         dataMB: 8000,
         smsCount: 100,
@@ -211,14 +237,14 @@ async function main() {
     data: [
       {
         subscriptionId: sub3.id,
-        timestamp: new Date('2025-12-10T14:30:00'),
+        timestamp: new Date(twoMonthsAgo.year, twoMonthsAgo.month - 1, 10, 14, 30),
         minutes: 3000,
         dataMB: 80000,
         smsCount: 1500,
       },
       {
         subscriptionId: sub3.id,
-        timestamp: new Date('2025-12-25T20:00:00'),
+        timestamp: new Date(twoMonthsAgo.year, twoMonthsAgo.month - 1, 25, 20, 0),
         minutes: 2500,
         dataMB: 60000,
         smsCount: 1200,
@@ -230,7 +256,7 @@ async function main() {
     data: [
       {
         subscriptionId: sub3.id,
-        timestamp: new Date('2026-01-12T09:00:00'),
+        timestamp: new Date(last.year, last.month - 1, 12, 9, 0),
         minutes: 1500,
         dataMB: 40000,
         smsCount: 600,
@@ -242,14 +268,14 @@ async function main() {
     data: [
       {
         subscriptionId: sub4.id,
-        timestamp: new Date('2025-12-05T11:00:00'),
+        timestamp: new Date(last.year, last.month - 1, 5, 11, 0),
         minutes: 600,
         dataMB: 20000,
         smsCount: 300,
       },
       {
         subscriptionId: sub4.id,
-        timestamp: new Date('2025-12-20T15:30:00'),
+        timestamp: new Date(last.year, last.month - 1, 20, 15, 30),
         minutes: 500,
         dataMB: 18000,
         smsCount: 250,
@@ -261,7 +287,7 @@ async function main() {
     data: [
       {
         subscriptionId: sub4.id,
-        timestamp: new Date('2026-01-14T13:00:00'),
+        timestamp: new Date(last.year, last.month - 1, 14, 13, 0),
         minutes: 400,
         dataMB: 12000,
         smsCount: 150,
@@ -273,42 +299,46 @@ async function main() {
 
   console.log('Creating invoices...')
 
+  const paidAtEarly = new Date(now.getFullYear(), now.getMonth(), 2, 14, 30)
+  const paidAtMid = new Date(now.getFullYear(), now.getMonth(), 3, 12, 0)
+  const paidAtLate = new Date(now.getFullYear(), now.getMonth(), 5, 10, 0)
+
   await prisma.invoice.createMany({
     data: [
       {
         subscriptionId: sub1.id,
-        year: 2025,
-        month: 12,
+        year: last.year,
+        month: last.month,
         baseFee: 49.99,
         overageFee: 30.0 + 20.0 + 6.0,
         totalAmount: 49.99 + 56.0,
         status: 'PAID',
-        paidAt: new Date('2026-01-05T10:00:00'),
+        paidAt: paidAtLate,
       },
       {
         subscriptionId: sub2.id,
-        year: 2025,
-        month: 12,
-        baseFee: 44.99,
+        year: last.year,
+        month: last.month,
+        baseFee: 89.99,
         overageFee: 0,
-        totalAmount: 44.99,
+        totalAmount: 89.99,
         status: 'PAID',
-        paidAt: new Date('2026-01-03T12:00:00'),
+        paidAt: paidAtMid,
       },
       {
         subscriptionId: sub3.id,
-        year: 2025,
-        month: 12,
+        year: last.year,
+        month: last.month,
         baseFee: 149.99,
         overageFee: 0,
         totalAmount: 149.99,
         status: 'PAID',
-        paidAt: new Date('2026-01-02T14:30:00'),
+        paidAt: paidAtEarly,
       },
       {
         subscriptionId: sub4.id,
-        year: 2025,
-        month: 12,
+        year: last.year,
+        month: last.month,
         baseFee: 89.99,
         overageFee: 0,
         totalAmount: 89.99,
@@ -316,8 +346,8 @@ async function main() {
       },
       {
         subscriptionId: sub1.id,
-        year: 2025,
-        month: 11,
+        year: twoMonthsAgo.year,
+        month: twoMonthsAgo.month,
         baseFee: 49.99,
         overageFee: 0,
         totalAmount: 49.99,
@@ -333,8 +363,10 @@ async function main() {
   console.log('Plans: 3 (Basic, Premium, Unlimited)')
   console.log('Users: 3')
   console.log('Subscriptions: 4 phone numbers')
-  console.log('Usage records: Multiple entries (Dec 2025 - Jan 2026)')
-  console.log('Invoices: 5 (mostly Dec 2025)')
+  console.log(
+    `Usage records: Multiple entries (${twoMonthsAgo.year}-${twoMonthsAgo.month}, ${last.year}-${last.month})`,
+  )
+  console.log('Invoices: 5')
   console.log('')
   console.log('Test accounts:')
   console.log('  jan.kowalski@example.com (2 numbers)')
