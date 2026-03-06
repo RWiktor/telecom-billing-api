@@ -13,10 +13,26 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return user ? children : <Navigate to='/login' replace />
 }
 
+function RedirectIfAuth({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth()
+  if (loading) return null
+  return user ? <Navigate to='/dashboard' replace /> : children
+}
+
+function RedirectHome() {
+  const { user, loading } = useAuth()
+  if (loading) return null
+  return <Navigate to={user ? '/dashboard' : '/login'} replace />
+}
+
 const router = createBrowserRouter([
   {
     path: '/login',
-    element: <Login />,
+    element: (
+      <RedirectIfAuth>
+        <Login />
+      </RedirectIfAuth>
+    ),
   },
   {
     path: '/dashboard',
@@ -35,8 +51,12 @@ const router = createBrowserRouter([
     ),
   },
   {
+    path: '/',
+    element: <RedirectHome />,
+  },
+  {
     path: '*',
-    element: <Navigate to='/login' replace />,
+    element: <RedirectHome />,
   },
 ])
 
