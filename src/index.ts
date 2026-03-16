@@ -4,6 +4,7 @@ import cors from 'cors'
 import { Request, Response } from 'express'
 import { errorHandler } from './middleware/error.middleware'
 import { indexRouter } from './routes'
+import { ensurePreviousMonthInvoices } from './jobs/invoice-startup.job'
 
 const PORT = process.env.PORT || 8000
 const app = express()
@@ -19,6 +20,16 @@ app.use((req: Request, res: Response): void => {
 
 app.use(errorHandler)
 
-app.listen(PORT, (): void => {
-  console.log('Listening on port: http://localhost:' + PORT)
-})
+const startServer = async () => {
+  try {
+    await ensurePreviousMonthInvoices()
+  } catch (error) {
+    console.error('[startup] Failed to ensure previous month invoices:', error)
+  }
+
+  app.listen(PORT, (): void => {
+    console.log('Listening on port: http://localhost:' + PORT)
+  })
+}
+
+void startServer()
