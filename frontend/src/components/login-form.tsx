@@ -5,39 +5,40 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/context/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { useActionState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { AxiosError } from 'axios'
 
-interface LoginState {
-  success?: string
-  error?: string
-}
-
 interface ApiErrorResponse {
+  error?: string
   message?: string
 }
 
 export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) {
   const navigate = useNavigate()
   const { login } = useAuth()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, setIsPending] = useState(false)
 
-  async function handleLogin(_prevState: LoginState | null, formData: FormData) {
-    const email = formData.get('email') as string
-    const password = formData.get('password') as string
-
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError(null)
+    setIsPending(true)
     try {
       await login(email, password)
       navigate('/dashboard')
-      return { success: 'Login successful' }
     } catch (error) {
       const axiosError = error as AxiosError<ApiErrorResponse>
-      return {
-        error: axiosError.response?.data?.message || 'Invalid email or password',
-      }
+      setError(
+        axiosError.response?.data?.error ||
+          axiosError.response?.data?.message ||
+          'Invalid email or password',
+      )
+    } finally {
+      setIsPending(false)
     }
   }
-
-  const [state, formAction, isPending] = useActionState(handleLogin, null)
 
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
@@ -47,11 +48,19 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
           <CardDescription>Enter your email below to login to your account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={formAction}>
+          <form onSubmit={handleLogin}>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor='email'>Email</FieldLabel>
-                <Input id='email' name='email' type='email' placeholder='m@example.com' required />
+                <Input
+                  id='email'
+                  name='email'
+                  type='email'
+                  placeholder='m@example.com'
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                />
               </Field>
               <Field>
                 <div className='flex items-center'>
@@ -63,12 +72,17 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
                     Forgot your password?
                   </a>
                 </div>
-                <Input id='password' name='password' type='password' required />
+                <Input
+                  id='password'
+                  name='password'
+                  type='password'
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                />
               </Field>
 
-              {state?.error && (
-                <p className='text-sm font-medium text-destructive text-center'>{state.error}</p>
-              )}
+              {error && <p className='text-sm font-medium text-destructive text-center'>{error}</p>}
 
               <Field>
                 <Button type='submit' className='w-full' disabled={isPending}>
